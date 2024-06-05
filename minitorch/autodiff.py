@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, Iterable, List, Tuple
+from typing import Any, Iterable, Tuple
 
 from typing_extensions import Protocol
 
@@ -69,8 +69,21 @@ def topological_sort(variable: Variable) -> Iterable[Variable]:
     Returns:
         Non-constant Variables in topological order starting from the right.
     """
-    # TODO: Implement for Task 1.4.
-    raise NotImplementedError("Need to implement for Task 1.4")
+    seen, sorting = set(), []
+
+    def recurse(v: Variable) -> None:
+        if v.is_constant():
+            return
+        if v.unique_id in seen:
+            return
+        seen.add(v.unique_id)
+        for u in v.parents:
+            recurse(u)
+        sorting.append(v)
+
+    recurse(variable)
+    sorting.reverse()
+    return sorting
 
 
 def backpropagate(variable: Variable, deriv: Any) -> None:
@@ -84,8 +97,17 @@ def backpropagate(variable: Variable, deriv: Any) -> None:
 
     No return. Should write to its results to the derivative values of each leaf through `accumulate_derivative`.
     """
-    # TODO: Implement for Task 1.4.
-    raise NotImplementedError("Need to implement for Task 1.4")
+    sorting = topological_sort(variable)
+    assert next(iter(sorting)).unique_id == variable.unique_id
+    derivatives = {v.unique_id: 0.0 for v in sorting}
+    derivatives[variable.unique_id] = deriv
+    for v in sorting:
+        d_out = derivatives[v.unique_id]
+        if not v.is_leaf():
+            for prev_var, prev_deriv in v.chain_rule(d_out):
+                derivatives[prev_var.unique_id] += prev_deriv
+        else:
+            v.accumulate_derivative(d_out)
 
 
 @dataclass
@@ -95,14 +117,14 @@ class Context:
     """
 
     no_grad: bool = False
-    saved_values: Tuple[Any, ...] = ()
+    saved_values: Tuple[float, ...] = ()
 
-    def save_for_backward(self, *values: Any) -> None:
+    def save_for_backward(self, *values: float) -> None:
         "Store the given `values` if they need to be used during backpropagation."
         if self.no_grad:
             return
         self.saved_values = values
 
     @property
-    def saved_tensors(self) -> Tuple[Any, ...]:
+    def saved_tensors(self) -> Tuple[float, ...]:
         return self.saved_values
