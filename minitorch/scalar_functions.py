@@ -74,11 +74,13 @@ class Add(ScalarFunction):
 
     @staticmethod
     def forward(ctx: Context, a: float, b: float) -> float:
-        return a + b
+        ctx.save_for_backward(a, b)
+        return operators.add(a, b)
 
     @staticmethod
     def backward(ctx: Context, d_output: float) -> Tuple[float, ...]:
-        return d_output, d_output
+        # TODO: Implement for Task 1.4.
+        raise NotImplementedError("Need to implement for Task 1.4")
 
 
 class Log(ScalarFunction):
@@ -91,8 +93,8 @@ class Log(ScalarFunction):
 
     @staticmethod
     def backward(ctx: Context, d_output: float) -> float:
-        (a,) = ctx.saved_values
-        return operators.log_back(a, d_output)
+        # TODO: Implement for Task 1.4.
+        raise NotImplementedError("Need to implement for Task 1.4")
 
 
 # To implement.
